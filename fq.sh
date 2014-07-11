@@ -11,12 +11,14 @@ case $1 in
         pppd call fq
         sleep 10s
         ip route replace default dev ppp0
+        route
         echo "fq vpn starting."
         exit 0;;
     off| stop)
         ip route replace default dev eth0
         killall pppd
         sleep 10s
+        route
         echo "fq vpn stopped."
         exit 0;;
     *)
