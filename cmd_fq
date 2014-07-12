@@ -54,9 +54,12 @@ david_setup(){
             pptpsetup --delete $tunnel
             ;;
         test)
+            echo "starting test..."
             pppd debug updetach call $tunnel
             sleep 1s
+            echo "end pppd."
             killall pppd
+            echo "end test."
             ;;
         *)
             ;;
