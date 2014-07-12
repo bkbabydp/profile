@@ -20,5 +20,12 @@ david_inittool(){
 }
 
 if [[ -d ./tools/ && -w ./tools/ ]]; then
-    david_inittool "chnroutes" "https://github.com/fivesheep/chnroutes.git"
+    case $1 in
+        chnroutes)
+            david_inittool "chnroutes" "https://github.com/fivesheep/chnroutes.git"
+            pip install argparse
+            ;;
+        *)
+            ;;
+    esac
 fi

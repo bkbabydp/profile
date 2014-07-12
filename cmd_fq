@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+
+tunnel="fq"
+file=/etc/ppp/peers/$tunnel
+
+david_setup(){
+    yum install pptp pptp-setup
+
+    local vpnip="107.170.234.24"
+
+    case $1 in
+        new)
+            read -p "username: " username
+            if [ -z $username ]; then
+                echo "warning: ingore pptpsetup!"
+            else
+                read -ps "password: " password
+                if [ -z $password ]; then
+                    echo "warning: ingore pptpsetup!"
+                else
+                    if [[ -f $file && -w $file ]]; then
+                        pptpsetup --delete $tunnel
+                    fi
+                    pptpsetup --create $tunnel --server $vpnip --username $username --password $password --encrypt # --start
+
+                    # check $file
+                    if [ -w $file ]; then
+                        echo "editing $file"
+
+                        # # set [defaultroute]
+                        # if [ `sed "s/#.*$//g" $file|grep defaultroute` ]; then
+                        #     echo "[defaultroute] has existed."
+                        # else
+                        #     echo "# 使用本连接作为默认路由,本文单网卡没意义，可以不添加，说明见附录" >> $file
+                        #     echo "defaultroute  " >> $file
+                        # fi
+
+                        # set [persist]
+                        if [ `sed "s/#.*$//g" $file|grep persist` ]; then
+                            echo "warning: [persist] has existed."
+                        else
+                            echo "# 当连接丢失时让pppd再次拨号，已验证" >> $file
+                            echo "persist" >> $file
+                        fi
+                    else
+                        echo "error: cannot find $file!"
+                        exit 1
+                    fi
+                fi
+            fi
+            ;;
+        clean)
+            pptpsetup --delete $tunnel
+            ;;
+        test)
+            pppd debug updetach call $tunnel
+            ;;
+        *)
+            ;;
+    esac
+}
+
+david_usage(){
+    cat <<!EOF!
+usage: $0 <command> [<option>]
+command:
+    setup <option>      setup the vpn.
+    option:
+        new             new tunnel.
+        clean           clean tunnel.
+        test            test tunnel.
+    on | start          starting the vpn.
+    off | stop          stopping the vpn.
+
+fq means go through the GFW.
+!EOF!
+}
+
+case $1 in
+    setup)
+        case $2 in
+            new)
+                david_setup new
+                exit 0
+                ;;
+            clean)
+                david_setup clean
+                exit 0
+                ;;
+            test)
+                david_setup test
+                exit 0
+                ;;
+            *)
+                david_usage
+                exit 3
+                ;;
+        esac
+        ;;
+    on | start)
+        if [[ -f $file && -w $file ]]; then
+            pppd updetach call $tunnel
+
+            if [ ! -f ./tools/chnroutes/chnroutes.py ]; then
+                ./cmd_inittools chnroutes
+            fi
+            echo "setting the route..."
+
+            cd tools/chnroutes
+            chmod +x chnroutes.py
+            ./chnroutes.py -p linux
+            chmod +x ip-pre-up ip-down
+            ./ip-pre-up
+            cd ../../
+
+            echo "fq vpn starting."
+            exit 0
+        else
+            echo "error: new setup first."
+            exit 1
+        fi
+        ;;
+    off | stop)
+        if [[ -f ./tools/chnroutes/ip-down && -w ./tools/chnroutes/ip-down ]]; then
+            cd tools/chnroutes
+            if [ ! -x ip-down ]; then
+                chmod +x ip-down
+            fi
+            ./ip-down
+            cd ../../
+
+            killall pppd
+            echo "fq vpn stopped."
+            exit 0
+        else
+            echo "error: create ip-down first."
+            exit 1
+        fi
+        ;;
+    *)
+        david_usage
+        exit 3
+        ;;
+esac
