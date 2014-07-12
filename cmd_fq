@@ -14,7 +14,7 @@ david_setup(){
             if [ -z $username ]; then
                 echo "warning: ingore pptpsetup!"
             else
-                read -ps "password: " password
+                read -sp "password: " password
                 if [ -z $password ]; then
                     echo "warning: ingore pptpsetup!"
                 else
