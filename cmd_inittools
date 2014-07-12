@@ -5,16 +5,16 @@ david_inittool(){
     local name=$1
     local url=$2
     if [ -d ./tools/$name ]; then
-        echo "upgrading: $name"
+        echo "[DOING] upgrading $name"
         if [[ -d ./tools/$name/.git && -w ./tools/$name/.git ]]; then
             cd ./tools/$name
             git pull
             cd ../../
         else
-            echo "cannot upgrade $name, please check."
+            echo "[ERROR] cannot find .git in $name."
         fi
     else
-        echo "downloading: $name"
+        echo "[DOING] downloading $name"
         git clone $url ./tools/$name
     fi
 }
@@ -22,7 +22,9 @@ david_inittool(){
 if [[ -d ./tools/ && -w ./tools/ ]]; then
     case $1 in
         chnroutes)
+            echo "[DOING] initing $name"
             david_inittool "chnroutes" "https://github.com/fivesheep/chnroutes.git"
+            echo "[DOING] installing models..."
             pip install argparse
             ;;
         *)

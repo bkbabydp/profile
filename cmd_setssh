@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+echo "[DOING] creating the ssh file..."
 mkdir ~/.ssh
 cp ./.ssh/authorized_keys ~/.ssh/
 sleep 10

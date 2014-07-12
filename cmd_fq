@@ -4,20 +4,22 @@ tunnel="fq"
 file=/etc/ppp/peers/$tunnel
 
 david_setup(){
+    echo "[DOING] installing/upgrading pptp pptp-setup"
     yum install pptp pptp-setup
 
     local vpnip="107.170.234.24"
 
     case $1 in
         new)
+            echo "[DOING] creating new setup..."
             read -p "username: " username
             if [ -z $username ]; then
-                echo "warning: ingore pptpsetup!"
+                echo "[WARNING] ingore pptpsetup!"
             else
                 read -sp "password: " password
                 echo -e "\n"
                 if [ -z $password ]; then
-                    echo "warning: ingore pptpsetup!"
+                    echo "[WARNING] ingore pptpsetup!"
                 else
                     if [[ -f $file && -w $file ]]; then
                         pptpsetup --delete $tunnel
@@ -26,7 +28,7 @@ david_setup(){
 
                     # check $file
                     if [ -w $file ]; then
-                        echo "editing $file"
+                        echo "[DOING] modifying $file"
 
                         # # set [defaultroute]
                         # if [ `sed "s/#.*$//g" $file|grep defaultroute` ]; then
@@ -38,28 +40,29 @@ david_setup(){
 
                         # set [persist]
                         if [ `sed "s/#.*$//g" $file|grep persist` ]; then
-                            echo "warning: [persist] has existed."
+                            echo "[WARNING] <persist> has existed."
                         else
                             echo "# 当连接丢失时让pppd再次拨号，已验证" >> $file
                             echo "persist" >> $file
                         fi
                     else
-                        echo "error: cannot find $file!"
+                        echo "[ERROR] cannot find $file!"
                         exit 1
                     fi
                 fi
             fi
             ;;
         clean)
+            echo "[DOING] cleaning setup"
             pptpsetup --delete $tunnel
             ;;
         test)
-            echo "starting test..."
+            echo "[DOING] starting test..."
             pppd debug updetach call $tunnel
             sleep 1s
-            echo "end pppd."
+            echo "[DOING] killing pppd."
             killall pppd
-            echo "end test."
+            echo "[WARNING] test ended."
             ;;
         *)
             ;;
@@ -105,41 +108,46 @@ case $1 in
         ;;
     on | start)
         if [[ -f $file && -w $file ]]; then
+            echo "[DOING] starting pppd"
             pppd updetach call $tunnel
 
             if [ ! -f ./tools/chnroutes/chnroutes.py ]; then
                 ./cmd_inittools chnroutes
             fi
-            echo "setting the route..."
 
+            echo "[DOING] setting the execute permission..."
             cd tools/chnroutes
             chmod +x chnroutes.py
+            echo "[DOING] create the route role..."
             ./chnroutes.py -p linux
             chmod +x ip-pre-up ip-down
+            echo "[DOING] setting the route..."
             ./ip-pre-up
             cd ../../
 
-            echo "fq vpn starting."
+            echo "[WARNING] fq vpn started."
             exit 0
         else
-            echo "error: new setup first."
+            echo "[ERROR] need setup first."
             exit 1
         fi
         ;;
     off | stop)
         if [[ -f ./tools/chnroutes/ip-down && -w ./tools/chnroutes/ip-down ]]; then
+            echo "[DOING] setting the execute permission..."
             cd tools/chnroutes
             if [ ! -x ip-down ]; then
                 chmod +x ip-down
             fi
+            echo "[DOING] cleaning the route..."
             ./ip-down
             cd ../../
-
+            echo "[DOING] killing the pppd"
             killall pppd
-            echo "fq vpn stopped."
+            echo "[WARNING] fq vpn stopped."
             exit 0
         else
-            echo "error: create ip-down first."
+            echo "[ERROR] create ip-down first."
             exit 1
         fi
         ;;
