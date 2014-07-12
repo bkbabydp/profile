@@ -55,6 +55,8 @@ david_setup(){
             ;;
         test)
             pppd debug updetach call $tunnel
+            sleep 1s
+            killall pppd
             ;;
         *)
             ;;
