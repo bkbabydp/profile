@@ -3,9 +3,43 @@
 case $1 in
     init)
         yum install pptp pptp-setup
-        #pptpsetup --create fq --server 107.170.234.24 --username david --password abc --encrypt
-        pptpsetup --create fq --server 107.170.234.24 --username david --encrypt
-        echo "fq vpn init."
+
+        read -p "username: " username
+        if [ -z $username ]; then
+            echo "username passed"
+        else
+            read -ps "password: " password
+            if [ -z $password ]; then
+                echo "password passed"
+            else
+                #pptpsetup --create fq --server 107.170.234.24 --username david --password abc --encrypt
+                pptpsetup --create fq --server 107.170.234.24 --username $username --password $password --encrypt
+            fi
+        fi
+
+
+        file=/etc/ppp/peers/fq
+        # check $file
+        if [ !-w $file ]; then
+            exit 1
+        fi
+        echo "editing $file"
+        # set [defaultroute]
+        if [ `sed "s/#.*$//g" $file|grep defaultroute` ]; then
+            echo "[defaultroute] existed."
+        else
+            echo "# 使用本连接作为默认路由,本文单网卡没意义，可以不添加，说明见附录" >> $file
+            echo "defaultroute  " >> $file
+        fi
+        # set [persist]
+        if [ `sed "s/#.*$//g" $file|grep persist` ]; then
+            echo "[persist] existed."
+        else
+            echo "# 当连接丢失时让pppd再次拨号，已验证" >> $file
+            echo "persist" >> $file
+        fi
+
+        echo "fq vpn inited."
         exit 0;;
     on | start)
         pppd call fq
