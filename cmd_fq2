@@ -12,7 +12,7 @@ david_setup(){
     echo "[DOING] installing shadowsocks client..."
     pip install shadowsocks
     echo "[DOING] creating cfg file..."
-    cat <<!EOF!
+    cat > $cfgfile <<!EOF!
 {
     "server":"107.170.234.24",
     "server_port":8388,
@@ -21,7 +21,7 @@ david_setup(){
     "timeout":600,
     "method":"aes-256-cfb"
 }
-!EOF! > $cfgfile
+!EOF!
 }
 
 david_usage(){
@@ -57,6 +57,7 @@ case $1 in
         exit 0
         ;;
     proxy)
+        echo "[DOING] setting the proxy..."
         http_proxy="http://127.0.0.1:1080"
         export http_proxy
         exit 0
