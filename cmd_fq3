@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 execpath=`pwd`
-cowpath="$execpath/tools/cow/"
-cfgfile="~/.cow/rc"
+cowpath=$execpath/tools/cow/
+cfgfile=~/.cow/rc
 
 david_setup(){
     echo "[DOING] checking cow path..."
@@ -13,10 +13,10 @@ david_setup(){
     echo "[DOING] installing cow client..."
     cd $cowpath
     curl -L git.io/cow | bash
-    cd execpath
+    cd $execpath
     echo "[DOING] creating config file..."
     read -sp "password: " $password
-    echo -e "/n"
+    echo -e "\n"
     cat >> $cfgfile <<!EOF!
 proxy = ss://aes-256-cfb:$password@107.170.234.24:8388
 !EOF!
