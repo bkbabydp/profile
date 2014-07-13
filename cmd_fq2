@@ -11,7 +11,7 @@ david_setup(){
     fi
     echo "[DOING] installing shadowsocks client..."
     pip install shadowsocks
-    pip install M2Crypto
+    yum install M2Crypto
     echo "[DOING] creating cfg file..."
     cat > $cfgfile <<!EOF!
 {
