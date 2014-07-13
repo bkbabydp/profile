@@ -31,6 +31,7 @@ command:
     setup       setup the vpn.
     on          starting the vpn.
     off         stopping the vpn.
+    proxy       set proxy.
 
 fq means go through the GFW.
 !EOF!
