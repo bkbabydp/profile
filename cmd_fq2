@@ -55,6 +55,11 @@ case $1 in
     off)
         exit 0
         ;;
+    proxy)
+        http_proxy="http://127.0.0.1:1080"
+        export http_proxy
+        exit 0
+        ;;
     *)
         david_usage
         exit 3
