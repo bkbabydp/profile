@@ -11,6 +11,7 @@ david_setup(){
     fi
     echo "[DOING] installing shadowsocks client..."
     pip install shadowsocks
+    pip install M2Crypto
     echo "[DOING] creating cfg file..."
     cat > $cfgfile <<!EOF!
 {
@@ -45,7 +46,7 @@ case $1 in
         ;;
     on)
         echo "[DOING] connecting shadowsocks..."
-        if [[ -f $cfgfile && -r $cfgfile ]]; then
+        if [[ ! -f $cfgfile || ! -r $cfgfile ]]; then
             david_setup
         fi
         echo "[DOING] starting shadowsocks client..."
