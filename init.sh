@@ -9,7 +9,11 @@ david_show_version(){
 david_system_init(){
     echo "[DOING] update system..."
     yum update
-    yum install bash-completion.noarch git nginx python-pip m2crypto screen
+    rpm -q bash-completion || yum install bash-completion
+    rpm -q git || yum install git
+    rpm -q nginx || yum install nginx
+    rpm -q python-pip || yum install python-pip
+    rpm -q screen || yum install screen
 }
 
 david_ssh_init(){
@@ -71,7 +75,7 @@ service jenkins status
 
 
 echo "Installing ajenti..."
-if [ ! `rqm -q ajenti` ]; then
+if [ ! `rpm -q ajenti` ]; then
     if [ ! -f tools/ajenti-repo-1.0-1.noarch.rpm ]; then
         rpm -i ajenti-repo-1.0-1.noarch.rpm
         yum install ajenti
