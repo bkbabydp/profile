@@ -51,7 +51,7 @@ do_on() {
     if [[ ! -d $PID_DIR ]]; then
         echo "creating PID dir"
         mkdir $PID_DIR || echo "failed creating PID directory $PID_DIR"; exit 1
-        chown $USER:$GROUP $PID_DIR || echo "failed creating PID directory $PID_DIR"; exit 1
+        # chown $USER:$GROUP $PID_DIR || echo "failed creating PID directory $PID_DIR"; exit 1
         chmod 0770 $PID_DIR
     fi
     if check_running; then
@@ -60,7 +60,8 @@ do_on() {
     fi
     echo "starting $NAME"
     # sudo will set the group to the primary group of $USER
-    sudo -u $USER -H $SHELL_CMD>$LOG_FILE 2>&1 &
+    # sudo -u $USER -H $SHELL_CMD>$LOG_FILE 2>&1 &
+    $SHELL_CMD>$LOG_FILE 2>&1 &
     PID=$!
     echo $PID > $PID_FILE
     sleep 0.3
