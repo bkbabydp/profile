@@ -125,6 +125,7 @@ do_proxy() {
         *)
             do_usage
             ;;
+    esac
 }
 
 do_usage() {
