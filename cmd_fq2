@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 
 BIN=sslocal
+RC_FILE=~/.shadowsocksrc
+SHELL_CMD="$BIN -c $RC_FILE"
+
 NAME=shadowsocks
 USER=root
 GROUP=root
 PID_DIR=/var/run
 PID_FILE=$PID_DIR/shadowsocks.pid
 LOG_FILE=/var/log/shadowsocks
-RC_FILE=~/.shadowsocksrc
 
 LOCAL_PORT=1080
 
@@ -58,7 +60,7 @@ do_on() {
     fi
     echo "starting $NAME"
     # sudo will set the group to the primary group of $USER
-    sudo -u $USER -H -- "$BIN -c $RC_FILE">$LOG_FILE 2>&1 &
+    sudo -u $USER -H $SHELL_CMD>$LOG_FILE 2>&1 &
     PID=$!
     echo $PID > $PID_FILE
     sleep 0.3
