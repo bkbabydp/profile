@@ -1,186 +1,181 @@
 #!/usr/bin/env bash
 
-### BEGIN INIT INFO
-# Provides:          cow
-# Required-Start:    $network
-# Required-Stop:     $network
-# Default-Start:     2 3 4 5
-# Default-Stop:      0 1 6
-# Short-Description: COW: Climb Over the Wall http proxy
-# Description:       Automatically detect blocked site and use parent proxy.
-### END INIT INFO
+NAME=cow
 
-# Put this script under /etc/init.d/, then run "update-rc.d cow defaults".
-
-# Note: this script requires sudo in order to run COW as the specified
-# user. Please change the following variables in order to use this script.
-# COW will search for rc/direct/block/stat file under user's $HOME/.cow/ directory.
-
-CURR_PATH=`pwd`
-COW_PATH=$CURR_PATH/tools/cow
-
-RC_FILE=$COW_PATH/rc
-BIN=$COW_PATH/cow
+BIN_PATH=~/profile/tools/$NAME
+BIN=$BIN_PATH/cow
+RC_FILE=$BIN_PATH/.cowrc
+SHELL_CMD="$BIN -rc $RC_FILE"
 
 USER=root
 GROUP=root
+PID_DIR=/var/run
+PID_FILE=$PID_DIR/$NAME.pid
+LOG_FILE=/var/log/$NAME
 
-PID_DIR=$COW_PATH/run
-PID_FILE=$PID_DIR/cow.pid
-LOG_FILE=$COW_PATH/cow.log
+LOCAL_PORT=7777
 
 RET_VAL=0
 
 check_running() {
-  if [[ -r $PID_FILE ]]; then
-    read PID <$PID_FILE
-    if [[ -d "/proc/$PID" ]]; then
-      return 0
+    if [[ -r $PID_FILE ]]; then
+        read PID <$PID_FILE
+        if [[ -d "/proc/$PID" ]]; then
+            return 0
+        else
+            rm -f $PID_FILE
+            return 1
+        fi
     else
-      rm -f $PID_FILE
-      return 1
+        return 2
     fi
-  else
-    return 2
-  fi
 }
 
-do_status() {
-  check_running
-  case $? in
-    0)
-      echo "cow running with PID $PID"
-      ;;
-    1)
-      echo "cow not running, remove PID file $PID_FILE"
-      ;;
-    2)
-      echo "Could not find PID file $PID_FILE, cow does not appear to be running"
-      ;;
-  esac
-  return 0
-}
-
-do_start() {
-  if [[ ! -d $PID_DIR ]]; then
-    echo "creating PID dir"
-    mkdir $PID_DIR || echo "failed creating PID directory $PID_DIR"; exit 1
-    # chown $USER:$GROUP $PID_DIR || echo "failed creating PID directory $PID_DIR"; exit 1
-    chmod 0770 $PID_DIR
-  fi
-  if check_running; then
-    echo "cow already running with PID $PID"
+# do_status
+do_st() {
+    check_running
+    case $? in
+        0)
+            echo "$NAME running with PID $PID"
+            ;;
+        1)
+            echo "$NAME not running, remove PID file $PID_FILE"
+            ;;
+        2)
+            echo "Could not find PID file $PID_FILE, $NAME does not appear to be running"
+            ;;
+    esac
     return 0
-  fi
-  echo "starting cow"
-  # sudo will set the group to the primary group of $USER
-  # sudo -u $USER -H -- $BIN >$LOG_FILE 2>&1 &
-  $BIN -logFile=$LOG_FILE -rc=$RC_FILE 2>&1 &
-  PID=$!
-  echo $PID > $PID_FILE
-  sleep 0.3
-  if ! check_running; then
-    echo "start failed"
-    return 1
-  fi
-  echo "cow running with PID $PID"
-  return 0
 }
 
-do_stop() {
-  if check_running; then
-    echo "stopping cow with PID $PID"
-    kill $PID
-    rm -f $PID_FILE
-  else
-    echo "Could not find PID file $PID_FILE"
-  fi
-}
-
-do_restart() {
-  do_stop
-  do_start
-}
-
-case "$1" in
-  start|stop|restart|status)
-    do_$1
-    ;;
-  *)
-    echo "Usage: cow {start|stop|restart|status}"
-    RET_VAL=1
-    ;;
-esac
-
-exit $RET_VAL
-
-
-
-
-#!/usr/bin/env bash
-
-execpath=`pwd`
-cowpath=$execpath/tools/cow/
-cfgfile=~/.cow/rc
-
-david_setup(){
-    echo "[DOING] checking cow path..."
-    if [ ! -d $cowpath ]; then
-        echo "[DOING] creating cow path..."
-        mkdir -p $cowpath
+# do_start
+do_on() {
+    if [[ ! -d $PID_DIR ]]; then
+        echo "creating PID dir"
+        mkdir $PID_DIR || echo "failed creating PID directory $PID_DIR"; exit 1
+        # chown $USER:$GROUP $PID_DIR || echo "failed creating PID directory $PID_DIR"; exit 1
+        chmod 0770 $PID_DIR
     fi
-    echo "[DOING] installing cow client..."
-    cd $cowpath
-    curl -L git.io/cow | bash
-    cd $execpath
-    echo "[DOING] creating config file..."
+    if check_running; then
+        echo "$NAME already running with PID $PID"
+        return 0
+    fi
+    echo "starting $NAME"
+    # sudo will set the group to the primary group of $USER
+    # sudo -u $USER -H $SHELL_CMD>$LOG_FILE 2>&1 &
+    $SHELL_CMD>$LOG_FILE 2>&1 &
+    PID=$!
+    echo $PID > $PID_FILE
+    sleep 0.3
+    if ! check_running; then
+        echo "start failed"
+        return 1
+    fi
+    echo "$NAME running with PID $PID"
+    return 0
+}
+
+# do_stop
+do_off() {
+    if check_running; then
+        echo "stopping $NAME with PID $PID"
+        kill $PID
+        rm -f $PID_FILE
+    else
+        echo "Could not find PID file $PID_FILE"
+    fi
+}
+
+# do_restart
+do_re() {
+    do_on
+    do_off
+}
+
+# do_install
+do_ins() {
+    echo "Installing $NAME..."
+    local p=`pwd`
+    mkdir -p $BIN_PATH
+    cd $BIN_PATH
+    curl -L git.io/cow | bash || echo "cannot install cow."; cd $p; exit 1
+    cd $p
+}
+
+do_rc() {
+    echo "creating rc file..."
     read -sp "password: " password
     echo -e "\n"
-    cat >> $cfgfile <<!EOF!
+    cat > $RC_FILE <<!EOF!
+#开头的行是注释，会被忽略
+# 本地 HTTP 代理地址
+# 配置 HTTP 和 HTTPS 代理时请填入该地址
+# 或者在自动代理配置中填入 http://127.0.0.1:7777/pac
+listen = http://127.0.0.1:$LOCAL_PORT
+
+# SOCKS5 二级代理
+# proxy = socks5://127.0.0.1:1080
+# HTTP 二级代理
+# proxy = http://127.0.0.1:8080
+# proxy = http://user:password@127.0.0.1:8080
+# shadowsocks 二级代理
 proxy = ss://aes-256-cfb:$password@107.170.234.24:8388
+# proxy = ss://aes-128-cfb:password@1.2.3.4:8388
+# cow 二级代理
+# proxy = cow://aes-128-cfb:password@1.2.3.4:8388
 !EOF!
+    echo "$RC_FILE: "
+    cat $RC_FILE
 }
 
-david_usage(){
+do_log() {
+    tail -f $LOG_FILE || echo "check the log file: $LOG_FILE"; exit 1
+}
+
+do_proxy() {
+    case $1 in
+        on)
+            export http_proxy="http://127.0.0.1:1080/"
+            export https_proxy="http://127.0.0.1:1080/"
+            echo $http_proxy
+            ;;
+        off)
+            export http_proxy=
+            export https_proxy=
+            ;;
+        *)
+            do_usage
+            ;;
+    esac
+}
+
+do_usage() {
     cat <<!EOF!
-usage: $0 <command> [<option>]
+usage: $NAME <command> [<option>]
 command:
-    setup       setup the vpn.
-    on          starting the vpn.
-    off         stopping the vpn.
-    proxy       set proxy.
+        st                  show the status of vpn.
+        on                  starting the vpn.
+        off                 stopping the vpn.
+        re                  restart the vpn.
+        ins                 install the vpn.
+        rc                  set the rc file of vpn.
+        log                 show the log of vpn.
+        proxy               set the proxy.
+            on|off
 
 fq means go through the GFW.
 !EOF!
+    exit 3
 }
 
 case $1 in
-    setup)
-        echo "[DOING] creating configulation..."
-        david_setup
-        exit 0
-        ;;
-    on)
-        echo "[DOING] connecting shadowsocks..."
-        if [[ ! -f $cfgfile || ! -r $cfgfile ]]; then
-            david_setup
-        fi
-        echo "[DOING] starting cow client..."
-        $cowpath/cow &
-        echo "[WARNING] cow is working."
-        exit 0
-        ;;
-    off)
-        exit 0
-        ;;
-    proxy)
-        echo "[DOING] setting the proxy..."
-        http_proxy="http://127.0.0.1:1080"
-        export http_proxy
-        exit 0
+    st | on | off | re | ins | rc | log | proxy)
+        do_$1 $2
         ;;
     *)
-        david_usage
-        exit 3
+        do_usage
+        RET_VAL=3
         ;;
 esac
+
+exit $RET_VAL
