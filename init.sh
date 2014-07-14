@@ -30,39 +30,56 @@ git clone https://github.com/bkbabydp/profile.git ~/profile
 david_show_version
 
 echo "Installing gitlab..."
-if [ ! -f tools/gitlab-7.0.0_omnibus-1.el6.x86_64.rpm ]; then
-    yum install openssh-server postfix
-    rpm -i gitlab-7.0.0_omnibus-1.el6.x86_64.rpm
+rpm -q openssh-server || yum install openssh-server
+rpm -q postfix || yum install postfix
+if [ ! `rpm -q gitlab` ]; then
+    if [ -f tools/gitlab-7.0.0_omnibus-1.el6.x86_64.rpm ]; then
+        rpm -i gitlab-7.0.0_omnibus-1.el6.x86_64.rpm
+
+        read -sp "Editing gitlab.rb. (ex:http://lzw.name:8081) press any key continue."
+        echo -e "\n"
+        vim /etc/gitlab/gitlab.rb
+        gitlab-ctl reconfigure
+        gitlab-ctl restart
+        gitlab-ctl help
+        echo "if any problem with firewall, try: lokkit -s http -s ssh"
+    else
+        echo "download: https://downloads-packages.s3.amazonaws.com/centos-6.5/gitlab-7.0.0_omnibus-1.el6.x86_64.rpm first"
+        exit 1
+    fi
 else
-    echo "download: https://downloads-packages.s3.amazonaws.com/centos-6.5/gitlab-7.0.0_omnibus-1.el6.x86_64.rpm first"
-    exit 1
+    echo "gitlab has installed."
 fi
-read -sp "Editing gitlab.rb. (ex:http://lzw.name:8081) press any key continue."
-echo -e "\n"
-vim /etc/gitlab/gitlab.rb
-gitlab-ctl reconfigure
-gitlab-ctl restart
-gitlab-ctl help
-echo "if any problem with firewall, try: lokkit -s http -s ssh"
 gitlab-ctl status
 
 echo "Installing jenkins..."
-wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat/jenkins.repo
-rpm --import http://pkg.jenkins-ci.org/redhat/jenkins-ci.org.key
-yum install java-1.7.0-openjdk jenkins
-read -sp "Editing jenkins config file. (find 8080 change into 8082) press any key continue."
-echo -e "\n"
-vim /etc/sysconfig/jenkins
-service jenkins restart
+rpm -q java-1.7.0-openjdk || yum install java-1.7.0-openjdk
+if [ ! `rpm -q jenkins` ]; then
+    wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat/jenkins.repo
+    rpm --import http://pkg.jenkins-ci.org/redhat/jenkins-ci.org.key
+    yum install jenkins
+
+    read -sp "Editing jenkins config file. (find 8080 change into 8082) press any key continue."
+    echo -e "\n"
+    vim /etc/sysconfig/jenkins
+    service jenkins restart
+    echo "service jenkins status|start|stop|restart..."
+else
+    echo "jenkins has installed."
+fi
 service jenkins status
-echo "service jenkins status|start|stop|restart..."
+
 
 echo "Installing ajenti..."
-if [ ! -f tools/ajenti-repo-1.0-1.noarch.rpm ]; then
-    rpm -i ajenti-repo-1.0-1.noarch.rpm
-    yum install ajenti
+if [ ! `rqm -q ajenti` ]; then
+    if [ ! -f tools/ajenti-repo-1.0-1.noarch.rpm ]; then
+        rpm -i ajenti-repo-1.0-1.noarch.rpm
+        yum install ajenti
+    else
+        echo "download: http://repo.ajenti.org/ajenti-repo-1.0-1.noarch.rpm first"
+        exit 1
+    fi
 else
-    echo "download: http://repo.ajenti.org/ajenti-repo-1.0-1.noarch.rpm first"
-    exit 1
+    echo "ajenti has installed."
 fi
 service ajenti restart
