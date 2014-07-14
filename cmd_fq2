@@ -90,13 +90,14 @@ do_re() {
 # do_install
 do_ins() {
     echo "[DOING] installing shadowsocks client..."
-    pip install shadowsocks
-    yum install m2crypto
+    pip install shadowsocks || echo "cannot install shadowsocks."
+    yum install m2crypto || echo "cannot install m2crypto."
 }
 
 do_rc() {
     echo "[DOING] creating rc file..."
     read -sp "password: " password
+    echo -e "\n"
     cat > $RC_FILE <<!EOF!
 {
     "server":"107.170.234.24",
@@ -110,7 +111,7 @@ do_rc() {
 }
 
 do_log() {
-    tail -f $LOG_FILE
+    tail -f $LOG_FILE || echo "check the log file: $LOG_FILE"
 }
 
 do_proxy() {
