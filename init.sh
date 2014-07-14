@@ -41,7 +41,7 @@ if [ $? -eq 0 ]; then
     echo "gitlab has installed."
 else
     if [ -f tools/gitlab-7.0.0_omnibus-1.el6.x86_64.rpm ]; then
-        rpm -i gitlab-7.0.0_omnibus-1.el6.x86_64.rpm
+        rpm -i tools/gitlab-7.0.0_omnibus-1.el6.x86_64.rpm
 
         read -sp "Editing gitlab.rb. (ex:http://lzw.name:8081) press any key continue."
         echo -e "\n"
@@ -80,7 +80,7 @@ if [ $? -eq 0 ]; then
     echo "ajenti has installed."
 else
     if [ -f tools/ajenti-repo-1.0-1.noarch.rpm ]; then
-        rpm -i ajenti-repo-1.0-1.noarch.rpm
+        rpm -i tools/ajenti-repo-1.0-1.noarch.rpm
         yum install ajenti
     else
         echo "download: http://repo.ajenti.org/ajenti-repo-1.0-1.noarch.rpm first"
