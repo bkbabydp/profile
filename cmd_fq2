@@ -108,6 +108,8 @@ do_rc() {
     "method":"aes-256-cfb"
 }
 !EOF!
+    echo "$RC_FILE: "
+    cat $RC_FILE
 }
 
 do_log() {
