@@ -36,7 +36,8 @@ david_show_version
 echo "Installing gitlab..."
 rpm -q openssh-server || yum install openssh-server
 rpm -q postfix || yum install postfix
-if [ ! `rpm -q gitlab` ]; then
+rpm -q gitlab || \
+if [ ! $? ]; then
     if [ -f tools/gitlab-7.0.0_omnibus-1.el6.x86_64.rpm ]; then
         rpm -i gitlab-7.0.0_omnibus-1.el6.x86_64.rpm
 
@@ -49,7 +50,6 @@ if [ ! `rpm -q gitlab` ]; then
         echo "if any problem with firewall, try: lokkit -s http -s ssh"
     else
         echo "download: https://downloads-packages.s3.amazonaws.com/centos-6.5/gitlab-7.0.0_omnibus-1.el6.x86_64.rpm first"
-        exit 1
     fi
 else
     echo "gitlab has installed."
@@ -58,7 +58,8 @@ gitlab-ctl status
 
 echo "Installing jenkins..."
 rpm -q java-1.7.0-openjdk || yum install java-1.7.0-openjdk
-if [ ! `rpm -q jenkins` ]; then
+rpm -q jenkins || \
+if [ ! $? ]; then
     wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat/jenkins.repo
     rpm --import http://pkg.jenkins-ci.org/redhat/jenkins-ci.org.key
     yum install jenkins
@@ -73,15 +74,14 @@ else
 fi
 service jenkins status
 
-
 echo "Installing ajenti..."
-if [ ! `rpm -q ajenti` ]; then
+rpm -q ajenti || \
+if [ ! $? ]; then
     if [ -f tools/ajenti-repo-1.0-1.noarch.rpm ]; then
         rpm -i ajenti-repo-1.0-1.noarch.rpm
         yum install ajenti
     else
         echo "download: http://repo.ajenti.org/ajenti-repo-1.0-1.noarch.rpm first"
-        exit 1
     fi
 else
     echo "ajenti has installed."
