@@ -135,13 +135,13 @@ do_log() {
 do_proxy() {
     case $1 in
         on)
-            export http_proxy="http://127.0.0.1:1080/"
-            export https_proxy="http://127.0.0.1:1080/"
+            declare -x http_proxy="http://127.0.0.1:$LOCAL_PORT/pac"
+            declare -x https_proxy="http://127.0.0.1:$LOCAL_PORT/pac"
             echo $http_proxy
             ;;
         off)
-            export http_proxy=
-            export https_proxy=
+            declare -x http_proxy=
+            declare -x https_proxy=
             ;;
         *)
             do_usage
