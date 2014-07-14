@@ -1,70 +1,165 @@
 #!/usr/bin/env bash
 
-cfgpath="tools/shadowsocks/"
-cfgfile="$cfgpath/shadowsocks.cfg"
+BIN=sslocal
+NAME=shadowsocks
+USER=root
+GROUP=root
+PID_DIR=/var/run
+PID_FILE=$PID_DIR/shadowsocks.pid
+LOG_FILE=/var/log/shadowsocks
+RC_FILE=~/.shadowsocksrc
 
-david_setup(){
-    echo "[DOING] checking cfg path..."
-    if [ ! -d $cfgpath ]; then
-        echo "[DOING] creating cfg path..."
-        mkdir $cfgpath
+LOCAL_PORT=1080
+
+RET_VAL=0
+
+check_running() {
+    if [[ -r $PID_FILE ]]; then
+        read PID <$PID_FILE
+        if [[ -d "/proc/$PID" ]]; then
+            return 0
+        else
+            rm -f $PID_FILE
+            return 1
+        fi
+    else
+        return 2
     fi
+}
+
+# do_status
+do_st() {
+    check_running
+    case $? in
+        0)
+            echo "$NAME running with PID $PID"
+            ;;
+        1)
+            echo "$NAME not running, remove PID file $PID_FILE"
+            ;;
+        2)
+            echo "Could not find PID file $PID_FILE, $NAME does not appear to be running"
+            ;;
+    esac
+    return 0
+}
+
+# do_start
+do_on() {
+    if [[ ! -d $PID_DIR ]]; then
+        echo "creating PID dir"
+        mkdir $PID_DIR || echo "failed creating PID directory $PID_DIR"; exit 1
+        chown $USER:$GROUP $PID_DIR || echo "failed creating PID directory $PID_DIR"; exit 1
+        chmod 0770 $PID_DIR
+    fi
+    if check_running; then
+        echo "$NAME already running with PID $PID"
+        return 0
+    fi
+    echo "starting $NAME"
+    # sudo will set the group to the primary group of $USER
+    sudo -u $USER -H -- "$BIN -c $RC_FILE">$LOG_FILE 2>&1 &
+    PID=$!
+    echo $PID > $PID_FILE
+    sleep 0.3
+    if ! check_running; then
+        echo "start failed"
+        return 1
+    fi
+    echo "$NAME running with PID $PID"
+    return 0
+}
+
+# do_stop
+do_off() {
+    if check_running; then
+        echo "stopping $NAME with PID $PID"
+        kill $PID
+        rm -f $PID_FILE
+    else
+        echo "Could not find PID file $PID_FILE"
+    fi
+}
+
+# do_restart
+do_re() {
+    do_on
+    do_off
+}
+
+# do_install
+do_ins() {
     echo "[DOING] installing shadowsocks client..."
     pip install shadowsocks
     yum install m2crypto
-    echo "[DOING] creating cfg file..."
-    cat > $cfgfile <<!EOF!
+}
+
+do_rc() {
+    echo "[DOING] creating rc file..."
+    read -sp "password: " password
+    cat > $RC_FILE <<!EOF!
 {
     "server":"107.170.234.24",
     "server_port":8388,
-    "local_port":1080,
-    "password":"shadowsockspwd",
+    "local_port":$LOCAL_PORT,
+    "password":$password,
     "timeout":600,
     "method":"aes-256-cfb"
 }
 !EOF!
 }
 
-david_usage(){
+do_log() {
+    tail -f $LOG_FILE
+}
+
+do_proxy() {
+    case $1 in
+        on)
+            export http_proxy=http://127.0.0.1:1080/
+            echo $http_proxy
+            ;;
+        off)
+            export http_proxy=
+            ;;
+        *)
+            do_usage
+            ;;
+}
+
+do_usage() {
     cat <<!EOF!
-usage: $0 <command> [<option>]
+usage: $NAME <command> [<option>]
 command:
-    setup       setup the vpn.
-    on          starting the vpn.
-    off         stopping the vpn.
-    proxy       set proxy.
+        st                  show the status of vpn.
+        on                  starting the vpn.
+        off                 stopping the vpn.
+        re                  restart the vpn.
+        ins                 install the vpn.
+        rc                  set the rc file of vpn.
+        log                 show the log of vpn.
+        proxy               set the proxy.
+            on|off
 
 fq means go through the GFW.
 !EOF!
+    exit 1
 }
 
 case $1 in
-    setup)
-        echo "[DOING] creating configulation..."
-        david_setup
-        exit 0
-        ;;
-    on)
-        echo "[DOING] connecting shadowsocks..."
-        if [[ ! -f $cfgfile || ! -r $cfgfile ]]; then
-            david_setup
-        fi
-        echo "[DOING] starting shadowsocks client..."
-        sslocal -c $cfgfile
-        echo "[WARNING] shadowsocks is working."
-        exit 0
-        ;;
-    off)
-        exit 0
+    st | on | off | re | ins | rc | log | proxy)
+        do_$1 $2
         ;;
     proxy)
-        echo "[DOING] setting the proxy..."
-        http_proxy="http://127.0.0.1:1080"
-        export http_proxy
-        exit 0
-        ;;
+                echo "[DOING] setting the proxy..."
+                http_proxy="http://127.0.0.1:1080"
+                export http_proxy
+                exit 0
+                ;;
     *)
-        david_usage
-        exit 3
+        do_usage
+        RET_VAL=1
         ;;
 esac
+
+exit $RET_VAL

@@ -9,7 +9,7 @@ david_show_version(){
 david_system_init(){
     echo "[DOING] update system..."
     yum update
-    yum install bash-completion.noarch git nginx
+    yum install bash-completion.noarch git nginx python-pip m2crypto
 }
 
 david_ssh_init(){
