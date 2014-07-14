@@ -106,7 +106,7 @@ do_rc() {
     "server":"107.170.234.24",
     "server_port":8388,
     "local_port":$LOCAL_PORT,
-    "password":$password,
+    "password":"$password",
     "timeout":600,
     "method":"aes-256-cfb"
 }
