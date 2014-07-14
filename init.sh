@@ -76,7 +76,7 @@ service jenkins status
 
 echo "Installing ajenti..."
 if [ ! `rpm -q ajenti` ]; then
-    if [ ! -f tools/ajenti-repo-1.0-1.noarch.rpm ]; then
+    if [ -f tools/ajenti-repo-1.0-1.noarch.rpm ]; then
         rpm -i ajenti-repo-1.0-1.noarch.rpm
         yum install ajenti
     else
@@ -86,4 +86,4 @@ if [ ! `rpm -q ajenti` ]; then
 else
     echo "ajenti has installed."
 fi
-service ajenti restart
+service ajenti status
